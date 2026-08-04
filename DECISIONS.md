@@ -14,7 +14,7 @@
 - **Risk**: Rate limit requires careful request budgeting (logged in config)
 
 ### [2024-XX-XX] Telegram Integration
-- **Decision**: Use provided bot token (8623716485:AAF36YsSI_8ExHa6JaN_lH5XJavuWpYwPxU)
+- **Decision**: Use provided bot token (xxxxxxxx)
 - **Rationale**: Enables immediate notification testing in Phase 7
 - **Security**: Token stored in environment variables, never committed
 
