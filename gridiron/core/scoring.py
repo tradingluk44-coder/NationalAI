@@ -482,3 +482,39 @@ if __name__ == "__main__":
         for failure in failures:
             print(failure)
         exit(1)
+
+
+class ScoringEngine:
+    """
+    Object-oriented wrapper around scoring functions.
+    Provides a consistent interface for all modules.
+    """
+    def __init__(self, config_path: str | None = None):
+        self.config = load_config(config_path)
+    
+    def compute_player_score(self, stats: PlayerStats) -> float:
+        """Compute score for a player given their stats."""
+        return compute_player_score(stats, self.config)
+    
+    def compute_def_score(self, stats: PlayerStats) -> float:
+        """Compute score for a defense given their stats."""
+        return compute_def_score(stats, self.config)
+    
+    def compute_kicker_score(self, stats: PlayerStats) -> float:
+        """Compute score for a kicker given their stats."""
+        return compute_kicker_score(stats, self.config)
+    
+    def compute_expected_points(self, projections_df):
+        """
+        Compute expected points from projections DataFrame.
+        Simple wrapper that uses tau_50 (median) as expectation.
+        """
+        import polars as pl
+        if isinstance(projections_df, pl.DataFrame):
+            result = projections_df.select([
+                pl.col('player_id'),
+                pl.col('position'),
+                pl.col('p50').alias('expected_points')
+            ])
+            return result
+        raise ValueError("Expected Polars DataFrame")
