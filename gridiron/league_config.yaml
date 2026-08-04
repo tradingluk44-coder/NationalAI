@@ -1,0 +1,135 @@
+# GRIDIRON Configuration
+
+platform: nfl_fantasy_official        # fantasy.nfl.com, German locale
+teams: 10
+divisions: none
+regular_season_weeks: 14              # weeks 1–14
+playoffs:
+  teams: 4                            # seeds 1–4; 5th+ out
+  semifinal: week 15                  # single week
+  final: weeks 16–17                  # TWO-WEEK AGGREGATE final
+tiebreaker: points_for                # governs seeding AND playoff cutoff
+ties_allowed: true
+roster:
+  starters: 
+    QB: 1
+    RB: 2
+    WR: 2
+    TE: 1
+    FLEX_RWT: 1                       # RB/WR/TE flex
+    K: 1
+    DEF: 1
+  bench: 6
+  ir: 3
+transactions:
+  waiver_type: rolling_priority       # ASSUMED default; verify in-app week 1
+  waiver_period_days: 1
+  free_agent_lock: per_game_kickoff   # players lock individually at their game start
+  adds_per_week: unlimited
+  trade_deadline: none
+  trades_expected: minimal            # league culture; commissioner veto exists
+  keepers: none                       # pure redraft
+scoring:
+  passing:  
+    yards_per_point: 25
+    td: 4
+    int: -2
+  rushing:  
+    yards_per_point: 10
+    td: 6
+  receiving:
+    yards_per_point: 10
+    td: 6
+    reception: 1                      # FULL PPR
+  misc:     
+    two_pt: 2
+    fumble_lost: -2
+    return_td: 6
+    fumble_rec_td: 6
+  kicker:   
+    pat: 1
+    fg_0_39: 3
+    fg_40_49: 3
+    fg_50_plus: 5                     # CRITICAL: 5 pts, not 4
+  defense:   # Use 'defense' instead of 'def' (reserved keyword)
+    sack: 1
+    int: 2
+    fumble_rec: 2
+    safety: 2
+    td: 6
+    return_td: 6
+    two_pt_return: 2
+    points_allowed_ladder:            # STEP FUNCTION - no interpolation
+      "0": 10                         # 0 points allowed = 10 pts
+      "1-6": 7                        # 1-6 points = 7 pts
+      "7-13": 4                       # 7-13 points = 4 pts
+      "14-20": 1                      # 14-20 points = 1 pt (CRITICAL: 20=1, 21=0)
+      "21-27": 0                      # 21-27 points = 0 pts
+      "28-34": -1                     # 28-34 points = -1 pts
+      "35+": -4                       # 35+ points = -4 pts
+opponents:
+  count: 9
+  skill_prior: semi_informed          # follow public rankings; no roster-conditional reasoning
+  known_managers: 
+    - Paul
+    - Johnny
+    - seppi
+    - Philipp
+    - Patrick
+    - Felix
+    - Jonas
+    - Ron
+    - Dominik
+    - Consti
+  last_season_table: 
+    Paul: 12-2
+    Johnny: 9-5
+    seppi: 9-5
+    Philipp: 8-6
+    Patrick: 7-7
+    Felix: 7-7
+    Jonas: 6-8
+    Ron: 6-8
+    Dominik: 3-11
+    Consti: 3-11
+  # NOTE: playoff cutoff last year decided by points_for at 7-7
+user:
+  draft_slot: UNKNOWN                 # PARAMETER — system must work for any slot 1–10
+  draft_date: UNKNOWN                 # PARAMETER — assume late August/early Sept
+  timezone: Europe/Berlin
+constraints:
+  budget: 0                           # no paid APIs, no cloud requiring credit card
+  execution: local_machine            # systemd timers or manual trigger fallback
+  odds_source: the_odds_api_free_tier # 500 req/month budget; ≤2 pulls/week planned
+  delivery: telegram_bot
+  api_keys:
+    fantasypros: "${FANTASYPROS_API_KEY}"  # GieGuNQ9iHv4AcxYtCgH9bIs6JG0ZEu9bYsKY3w6
+    telegram_bot: "${TELEGRAM_BOT_TOKEN}"  # 8623716485:AAF36YsSI_8ExHa6JaN_lH5XJavuWpYwPxU
+    theoddsapi: "${THEODDS_API_KEY}"
+
+# Strategic Invariants (encoded as constants, tested, not re-derived ad hoc)
+invariants:
+  I1: "QB value = passing at HALF standard rate + rushing at FULL RB rate → only rushing QBs separate; pocket QBs ≈ streamable"
+  I2: "Full PPR + 9 starters × 10 teams → reception volume dominates; TD-dependent players carry variance tax"
+  I3: "Elite-TE-or-stream; TE middle class is dead zone (valuation discontinuity check)"
+  I4: "K and DEF are weekly streams. DEF ladder makes opponent implied total dominant. Zero draft capital above last two rounds"
+  I5: "points_for tiebreaker → default lineup objective is E[points]; deviate to P(win) ONLY when 0.40 ≤ P(win) ≤ 0.60 in playoff weeks"
+  I6: "Two-week aggregate final → LOWER variance event; weeks 16-17 maximize expectation; week 15 single week allow ceiling-lean if underdog"
+  I7: "Per-game free-agent lock → late-window pivot value; Sunday-morning CET re-optimization is first-class workflow"
+  I8: "Rolling waivers → forbid spending top-3 priority on adds with ΔP(playoffs) below threshold; route streams through post-clear FA"
+  I9: "3 IR slots → injured-stash capacity is free; valuation includes IR-slot availability"
+
+# Thresholds (exposed in config, never inline)
+thresholds:
+  posture_band_lower: 0.40            # I5: switch to P(win) optimization below this
+  posture_band_upper: 0.60            # I5: switch to P(win) optimization above this
+  waiver_priority_spend_threshold: 4  # I8: ΔP(playoffs) in percentage points for top-3 priority
+  bench_volatility_switch_round: 9    # Phase 4: switch from τ50 to τ85 optimization
+  draft_lookahead_depth: 2            # Phase 4: rounds of lookahead for pick optimization
+  adp_noise_std: 0.15                 # Phase 3: standard deviation for ADP noise simulation
+  replacement_simulation_draws: 1000  # Phase 3: ADP noise draws for replacement level
+  sim_scenarios: 10000                # Phase 2+: joint player-score scenarios per week
+  calibration_coverage_tolerance: 0.05 # Phase 2: ±5pp tolerance for [τ25, τ85] coverage
+  unmapped_id_threshold: 0.02         # Phase 1: <2% unmapped player IDs
+  request_budget_daily: 50            # Phase 1: FantasyPros API daily limit
+  odds_pulls_per_week: 2              # Phase 1: TheOdds API budget
