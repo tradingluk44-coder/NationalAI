@@ -25,7 +25,7 @@ import logging
 
 from .board import VorpBoard
 from .dynamic_adjuster import DynamicAdjuster, RosterContext, ValueAdjustment
-from ..core.replacement import ReplacementCalculator
+from core.replacement import ReplacementCalculator
 
 logger = logging.getLogger(__name__)
 

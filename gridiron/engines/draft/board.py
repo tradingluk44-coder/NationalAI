@@ -18,9 +18,9 @@ import numpy as np
 from datetime import datetime
 import logging
 
-from ..core.scoring import ScoringEngine
-from ..core.replacement import ReplacementCalculator
-from ..core.projections import ProjectionService
+from core.scoring import ScoringEngine
+from core.replacement import ReplacementCalculator
+from core.projections import ProjectionService
 
 logger = logging.getLogger(__name__)
 
